@@ -43,6 +43,15 @@ WORKDIR /app
 # Install Annovar (Note: Annovar must be downloaded manually due to licensing)
 RUN mkdir -p /app/annovar /app/annovar/humandb
 
+# Copy the downloaded Annovar files (after you've downloaded them locally)
+COPY annovar/ /app/annovar/
+
+# Make scripts executable
+RUN chmod +x /app/annovar/*.pl
+
+# Add Annovar to PATH
+ENV PATH="/app/annovar:${PATH}"
+
 # Create directories for reference data, uploads, and results
 RUN mkdir -p /app/reference /app/uploads /app/results
 
