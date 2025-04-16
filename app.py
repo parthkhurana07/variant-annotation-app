@@ -69,6 +69,20 @@ def index():
     
     return render_template('index.html')
 
+def clean_annovar_csv(input_csv, output_csv):
+    """Clean Annovar CSV file by removing VCF header lines."""
+    with open(input_csv, 'r') as infile, open(output_csv, 'w') as outfile:
+        # Get the header line
+        header = infile.readline()
+        outfile.write(header)
+        
+        # Process the rest of the file
+        for line in infile:
+            if not line.startswith('##'):
+                outfile.write(line)
+    
+    return output_csv
+
 def run_variant_pipeline(fastq_files, output_dir):
     """Run the complete variant calling and annotation pipeline"""
     
@@ -101,12 +115,15 @@ def run_variant_pipeline(fastq_files, output_dir):
     annovar_cmd = f"table_annovar.pl {normalized_vcf} /app/annovar/humandb/ -buildver hg38 -out {annovar_output} -remove -protocol refGene,exac03,avsnp147,dbnsfp30a -operation g,f,f,f -nastring . -csvout"
     subprocess.run(annovar_cmd, shell=True, check=True)
     
-    # Step 5: Convert annotated CSV to Excel with pandas
+
     csv_file = f"{annovar_output}.hg38_multianno.csv"
+    clean_csv_file = f"{annovar_output}.clean.csv"
+    clean_csv_file = clean_annovar_csv(csv_file, clean_csv_file)
+
     excel_file = os.path.join(output_dir, "annotated_variants.xlsx")
     
     # Read the CSV and create an Excel file with formatting
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(clean_csv_file)
     
     # Add some basic filtering and statistics
     df['ExAC_AF'] = pd.to_numeric(df['ExAC_ALL'], errors='coerce')
